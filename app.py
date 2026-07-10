@@ -42,7 +42,7 @@ def get_trending_words(headlines, top_n=8):
 
 df = load_data()
 
-st.title("📰 TrendScope")
+st.title("📰 TrendWatch")
 st.caption("Live News Trend & Sentiment Analytics Dashboard | Data source: GDELT")
 
 with st.sidebar:
