@@ -4,7 +4,7 @@ import re
 from collections import Counter
 
 st.set_page_config(
-    page_title="TrendScope | Live News Analytics",
+    page_title="TrendWatch | Live News Analytics",
     page_icon="📰",
     layout="wide"
 )
