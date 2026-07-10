@@ -179,7 +179,7 @@ with right:
 left2, right2 = st.columns(2)
 
 with left2:
-    st.subheader("📈 Sentiment Analysis")
+    st.subheader("😊 Sentiment Analysis")
 
     sentiment_counts = filtered_df["sentiment"].value_counts()
     if not sentiment_counts.empty:
@@ -203,4 +203,13 @@ st.subheader("📰 Latest Headline Insights")
 latest_news = filtered_df.sort_values(
     "collected_at",
     ascending=False
-)[["title", "source_country", "language
+)[["title", "source_country", "language", "published_date", "sentiment", "tone", "url"]]
+
+st.dataframe(latest_news, use_container_width=True, hide_index=True)
+
+st.download_button(
+    "Download Filtered News Dataset",
+    filtered_df.to_csv(index=False).encode("utf-8"),
+    "trendwatch_filtered_news.csv",
+    "text/csv"
+)
