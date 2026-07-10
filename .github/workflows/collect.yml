@@ -1,0 +1,36 @@
+name: Collect GDELT Live News
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect-news:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download repository files
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python libraries
+        run: pip install requests pandas
+
+      - name: Collect latest GDELT news
+        run: python collect_gdelt_news.py
+
+      - name: Save updated CSV to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gdelt_live_news.csv
+          git diff --cached --quiet || git commit -m "Update live GDELT news dataset"
+          git push
