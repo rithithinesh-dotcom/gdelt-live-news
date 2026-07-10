@@ -3,12 +3,45 @@ import pandas as pd
 import re
 
 st.set_page_config(
-    page_title="TrendWatch | Live News Analytics",
-    page_icon="📈",
+    page_title="TrendWatch",
+    page_icon="📰",
     layout="wide"
 )
 
 DATA_URL = "https://raw.githubusercontent.com/rithithinesh-dotcom/gdelt-live-news/main/gdelt_live_news.csv"
+
+st.markdown("""
+<style>
+    .stApp { background-color: #F5F7FB; }
+    h1, h2, h3 { color: #15233D; }
+    .main-title {
+        font-size: 38px;
+        font-weight: 800;
+        color: #15233D;
+        margin-bottom: 0;
+    }
+    .subtitle {
+        color: #667085;
+        font-size: 16px;
+        margin-top: 0;
+    }
+    div[data-testid="stMetric"] {
+        background-color: white;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 2px 10px rgba(21,35,61,0.08);
+    }
+    .top-topic {
+        background: linear-gradient(135deg, #15233D, #3169E8);
+        color: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin: 14px 0 20px 0;
+    }
+    .top-topic h3 { color: white; margin: 0; }
+    .top-topic p { color: #DDE8FF; margin-bottom: 0; }
+</style>
+""", unsafe_allow_html=True)
 
 @st.cache_data(ttl=300)
 def load_data():
@@ -25,190 +58,148 @@ def get_sentiment(tone):
         return "Neutral"
     if tone > 1:
         return "Positive"
-    if tone < -1:
+    elif tone < -1:
         return "Negative"
     return "Neutral"
 
-def extract_keywords(titles):
+def extract_topic(title):
+    if pd.isna(title):
+        return "Other"
+
+    words = re.findall(r"\b[a-zA-Z]{4,}\b", title.lower())
+
     stop_words = {
-        "the", "and", "for", "with", "from", "that", "this", "are", "was",
-        "will", "has", "have", "into", "about", "after", "over", "news",
-        "says", "new", "its", "their", "how", "why", "who", "what", "in",
-        "on", "at", "to", "of", "a", "an", "is", "as", "by"
+        "this", "that", "with", "from", "have", "will", "news",
+        "about", "after", "their", "they", "were", "been", "into",
+        "more", "than", "over", "says", "said", "what", "when",
+        "where", "which", "today", "latest", "could", "should"
     }
 
-    words = []
-    for title in titles.dropna():
-        found_words = re.findall(r"\b[a-zA-Z]{4,}\b", str(title).lower())
-        words.extend([word for word in found_words if word not in stop_words])
+    useful_words = [word for word in words if word not in stop_words]
 
-    return pd.Series(words).value_counts().head(8)
+    if useful_words:
+        return useful_words[0].title()
+
+    return "Other"
 
 df = load_data()
 df["sentiment"] = df["tone"].apply(get_sentiment)
+df["topic"] = df["title"].apply(extract_topic)
 
-st.markdown("""
-<style>
-    .main {
-        background-color: #f5f7fb;
-    }
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-    .title-text {
-        font-size: 2.2rem;
-        font-weight: 800;
-        color: #15233d;
-        margin-bottom: 0;
-    }
-    .subtitle-text {
-        color: #667085;
-        font-size: 1rem;
-        margin-top: 0;
-    }
-    div[data-testid="stMetric"] {
-        background-color: white;
-        border-radius: 14px;
-        padding: 18px;
-        box-shadow: 0 2px 10px rgba(23, 32, 51, 0.08);
-    }
-    h2, h3 {
-        color: #15233d;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown('<p class="title-text">📈 TrendWatch</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">📰 TrendWatch</p>', unsafe_allow_html=True)
 st.markdown(
-    '<p class="subtitle-text">Live News Trend & Sentiment Analytics Dashboard</p>',
+    '<p class="subtitle">Live News Trend & Sentiment Analytics Dashboard powered by GDELT</p>',
     unsafe_allow_html=True
 )
 
 with st.sidebar:
-    st.header("Dashboard Filters")
+    st.header("Filter News")
+
+    search = st.text_input("Search headlines")
 
     countries = sorted(df["source_country"].dropna().unique())
     selected_countries = st.multiselect(
-        "Country",
+        "Countries",
         countries,
         default=countries
     )
 
     languages = sorted(df["language"].dropna().unique())
     selected_languages = st.multiselect(
-        "Language",
+        "Languages",
         languages,
         default=languages
     )
 
-    sentiment_options = ["Positive", "Neutral", "Negative"]
-    selected_sentiments = st.multiselect(
-        "Sentiment",
-        sentiment_options,
-        default=sentiment_options
-    )
-
-    search_text = st.text_input("Search news headlines")
+    if st.button("Refresh Dashboard"):
+        st.cache_data.clear()
+        st.rerun()
 
 filtered_df = df[
     (df["source_country"].isin(selected_countries)) &
-    (df["language"].isin(selected_languages)) &
-    (df["sentiment"].isin(selected_sentiments))
+    (df["language"].isin(selected_languages))
 ].copy()
 
-if search_text:
+if search:
     filtered_df = filtered_df[
-        filtered_df["title"].str.contains(search_text, case=False, na=False)
+        filtered_df["title"].str.contains(search, case=False, na=False)
     ]
 
-top_keywords = extract_keywords(filtered_df["title"])
-top_topic = top_keywords.index[0].title() if not top_keywords.empty else "No data"
+topic_counts = filtered_df["topic"].value_counts()
+top_topic = topic_counts.index[0] if not topic_counts.empty else "No data"
+top_topic_count = topic_counts.iloc[0] if not topic_counts.empty else 0
 
-positive_percentage = 0
-if len(filtered_df) > 0:
-    positive_percentage = round(
-        (filtered_df["sentiment"] == "Positive").mean() * 100
-    )
+sentiment_counts = filtered_df["sentiment"].value_counts()
+overall_sentiment = (
+    sentiment_counts.index[0] if not sentiment_counts.empty else "No data"
+)
 
-overall_sentiment = "Neutral"
-if positive_percentage > 50:
-    overall_sentiment = "Positive"
-elif (filtered_df["sentiment"] == "Negative").mean() > 0.4:
-    overall_sentiment = "Negative"
+col1, col2, col3, col4 = st.columns(4)
 
-c1, c2, c3, c4 = st.columns(4)
+col1.metric("Articles Analyzed", f"{len(filtered_df):,}")
+col2.metric("Top Trending Topic", top_topic)
+col3.metric("Overall Sentiment", overall_sentiment)
+col4.metric("News Sources", filtered_df["domain"].nunique())
 
-c1.metric("Articles Analyzed", f"{len(filtered_df):,}")
-c2.metric("Top Trending Topic", top_topic)
-c3.metric("Overall Sentiment", overall_sentiment)
-c4.metric("News Sources", filtered_df["domain"].nunique())
+st.markdown(
+    f"""
+    <div class="top-topic">
+        <h3>🔥 Currently Trending: {top_topic}</h3>
+        <p>{top_topic_count:,} related headlines found in the live dataset.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-st.divider()
-
-left, right = st.columns([2, 1])
+left, right = st.columns([1.5, 1])
 
 with left:
-    st.subheader("📊 News Trend Over Time")
+    st.subheader("News Trend Over Time")
 
-    trend_df = filtered_df.dropna(subset=["published_date"]).copy()
-    trend_df["date"] = trend_df["published_date"].dt.date
-    daily_articles = trend_df.groupby("date").size()
+    trend_df = (
+        filtered_df.dropna(subset=["published_date"])
+        .groupby(filtered_df["published_date"].dt.date)
+        .size()
+    )
 
-    if not daily_articles.empty:
-        st.line_chart(daily_articles)
-    else:
-        st.info("No date-based trend data is available yet.")
+    st.line_chart(trend_df)
 
 with right:
-    st.subheader("🔥 Top Trending Topics")
-
-    if not top_keywords.empty:
-        trending_table = pd.DataFrame({
-            "Topic": top_keywords.index.str.title(),
-            "Mentions": top_keywords.values
-        })
-        st.dataframe(
-            trending_table,
-            hide_index=True,
-            use_container_width=True
-        )
-    else:
-        st.info("No trending topics found.")
+    st.subheader("Top Trending Topics")
+    st.bar_chart(topic_counts.head(8))
 
 left2, right2 = st.columns(2)
 
 with left2:
-    st.subheader("😊 Sentiment Analysis")
-
-    sentiment_counts = filtered_df["sentiment"].value_counts()
-    if not sentiment_counts.empty:
-        st.bar_chart(sentiment_counts)
-    else:
-        st.info("No sentiment data available.")
+    st.subheader("Sentiment Analysis")
+    st.bar_chart(sentiment_counts)
 
 with right2:
-    st.subheader("🌍 Top News Countries")
+    st.subheader("Top News Countries")
+    st.bar_chart(filtered_df["source_country"].value_counts().head(8))
 
-    country_counts = filtered_df["source_country"].value_counts().head(10)
-    if not country_counts.empty:
-        st.bar_chart(country_counts)
-    else:
-        st.info("No country data available.")
-
-st.divider()
-
-st.subheader("📰 Latest Headline Insights")
+st.subheader("Latest Headline Insights")
 
 latest_news = filtered_df.sort_values(
     "collected_at",
     ascending=False
-)[["title", "source_country", "language", "published_date", "sentiment", "tone", "url"]]
+)[
+    [
+        "title",
+        "topic",
+        "sentiment",
+        "source_country",
+        "language",
+        "published_date",
+        "tone",
+        "url"
+    ]
+]
 
-st.dataframe(latest_news, use_container_width=True, hide_index=True)
+st.dataframe(latest_news, use_container_width=True, height=420)
 
 st.download_button(
-    "Download Filtered News Dataset",
+    "Download Filtered Dataset",
     filtered_df.to_csv(index=False).encode("utf-8"),
     "trendwatch_filtered_news.csv",
     "text/csv"
