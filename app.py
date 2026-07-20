@@ -94,7 +94,7 @@ if search:
     if len(news)==0:
         st.warning("No news found.")
         st.stop()
-    # ---------------- DATA PREPARATION ----------------
+   # ---------------- DATA PREPARATION ----------------
 
 if "headline" in news.columns:
     news["headline"] = news["headline"].fillna("")
