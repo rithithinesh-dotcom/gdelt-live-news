@@ -46,13 +46,30 @@ with header2:
     "",
     placeholder="🔍 Search news, topics or keywords..."
 )
-        with st.sidebar:
-            st.title("📊 Dashboard")
-            menu = st.radio(
-                "",
-                ["Dashboard","Trending Topics","News Search","Sentiment Analysis","Categories","Reports"]
-            )
+    with st.sidebar:
+        st.title("📊 Dashboard")
+        menu = st.radio(
+        "",
+        [
+            "Dashboard",
+            "Trending Topics",
+            "News Search",
+            "Sentiment Analysis",
+            "Categories",
+            "Reports"
+        ]
+    )
 
+    st.markdown("---")
+
+    st.info("""
+### Data Source
+
+**GDELT**
+
+Global Database of Events,
+Language & Tone
+""")
     st.markdown("---")
 
     st.info("""
