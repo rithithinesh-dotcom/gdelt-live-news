@@ -1,0 +1,227 @@
+/* Background */
+.stApp {
+    background: #F4F8FC;
+}
+
+/* Hide Streamlit menu */
+#MainMenu,
+footer,
+header {
+    visibility: hidden;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #DCEBFA 0%, #EDF5FF 100%);
+    border-right: 1px solid #D9E7F5;
+}
+
+/* Header */
+.logo-box{
+    background:white;
+    border-radius:18px;
+    padding:18px 25px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.08);
+    margin-bottom:20px;
+}
+
+.logo-box h1{
+    color:#2D72D9;
+    font-size:42px;
+    margin-bottom:0;
+}
+
+.logo-box p{
+    color:#5F7C9A;
+    font-size:18px;
+}
+
+/* Update Card */
+
+.update-box{
+
+background:white;
+
+padding:18px;
+
+border-radius:18px;
+
+text-align:center;
+
+box-shadow:0 4px 18px rgba(0,0,0,.08);
+
+}
+
+/* Cards */
+
+.card{
+
+background:white;
+
+padding:25px;
+
+border-radius:20px;
+
+box-shadow:0 5px 18px rgba(0,0,0,.08);
+
+margin-bottom:20px;
+
+transition:.3s;
+
+}
+
+.card:hover{
+
+transform:translateY(-4px);
+
+}
+
+/* Category */
+
+.category-card{
+
+background:white;
+
+border-radius:18px;
+
+padding:20px;
+
+text-align:center;
+
+box-shadow:0 5px 18px rgba(0,0,0,.08);
+
+transition:.3s;
+
+height:180px;
+
+}
+
+.category-card:hover{
+
+transform:translateY(-5px);
+
+}
+
+/* News */
+
+.news-card{
+
+background:white;
+
+padding:20px;
+
+margin-bottom:15px;
+
+border-radius:18px;
+
+box-shadow:0 4px 16px rgba(0,0,0,.08);
+
+transition:.3s;
+
+}
+
+.news-card:hover{
+
+transform:scale(1.01);
+
+}
+
+/* Buttons */
+
+.stButton>button{
+
+background:#2D72D9;
+
+color:white;
+
+border:none;
+
+border-radius:10px;
+
+padding:10px 20px;
+
+font-weight:bold;
+
+}
+
+.stButton>button:hover{
+
+background:#1D5CC4;
+
+}
+
+/* Search Box */
+
+.stTextInput input{
+
+border-radius:15px;
+
+border:2px solid #D9E7F5;
+
+padding:12px;
+
+font-size:17px;
+
+background:white;
+
+}
+
+.stTextInput input:focus{
+
+border:2px solid #2D72D9;
+
+}
+
+/* Metrics */
+
+[data-testid="metric-container"]{
+
+background:white;
+
+border-radius:15px;
+
+padding:10px;
+
+box-shadow:0 3px 12px rgba(0,0,0,.08);
+
+}
+
+/* Plotly */
+
+.js-plotly-plot{
+
+border-radius:18px;
+
+}
+
+/* Table */
+
+[data-testid="stDataFrame"]{
+
+background:white;
+
+border-radius:18px;
+
+}
+
+/* Scrollbar */
+
+::-webkit-scrollbar{
+
+width:10px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+background:#2D72D9;
+
+border-radius:20px;
+
+}
+
+::-webkit-scrollbar-track{
+
+background:#EDF5FF;
+
+}
