@@ -90,13 +90,10 @@ if search:
 
     news = news[
         news.astype(str)
-        .apply(lambda row: row.str.contains(search, case=False).any(), axis=1)
-    ]
+        .apply(lambda row: row.str.contains(search, case=False).any(), axis=1)]
     if len(news)==0:
-
-    st.warning("No news found.")
-
-    st.stop()
+        st.warning("No news found.")
+        st.stop()
     # ---------------- DATA PREPARATION ----------------
 
 if "headline" in news.columns:
