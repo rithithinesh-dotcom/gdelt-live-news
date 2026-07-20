@@ -1,306 +1,370 @@
 import streamlit as st
 import pandas as pd
-import re
+import plotly.express as px
+import plotly.graph_objects as go
+from textblob import TextBlob
+from datetime import datetime
+import os
+
+# ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
     page_title="TrendWatch",
-    page_icon="📰",
-    layout="wide"
+    page_icon="📈",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-DATA_URL = "https://raw.githubusercontent.com/rithithinesh-dotcom/gdelt-live-news/main/gdelt_live_news.csv"
+# ---------------- CUSTOM CSS ----------------
 
-st.markdown("""
-<style>
-    .stApp {
-        background-color: #F2F7FB;
-        color: #8DB4D6;
-    }
+def load_css():
+    with open("style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-    header[data-testid="stHeader"] {
-        background-color: #F2F7FB;
-    }
+load_css()
+header1, header2 = st.columns([6,2])
 
-    #MainMenu, footer {
-        visibility: hidden;
-    }
+with header1:
 
-    .main-title {
-        font-size: 52px;
-        font-weight: 800;
-        color: #8DB4D6;
-        margin-bottom: 0px;
-        letter-spacing: 1px;
-    }
+    st.markdown("""
+    <div class="logo-box">
+        <h1>📈 TrendWatch</h1>
+        <p>Live News Trend & Sentiment Analytics</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    .subtitle {
-        color: #8DB4D6;
-        font-size: 18px;
-        margin-top: 0px;
-        margin-bottom: 25px;
-    }
+with header2:
 
-    .section-title {
-        color: #8DB4D6;
-        font-size: 25px;
-        font-weight: 700;
-        margin-top: 20px;
-    }
-
-    .metric-card {
-        background-color: #FFFFFF;
-        border: 1px solid #D6E6F2;
-        border-radius: 16px;
-        padding: 18px;
-        min-height: 130px;
-    }
-
-    .metric-label {
-        color: #8DB4D6;
-        font-size: 15px;
-        font-weight: 600;
-    }
-
-    .metric-value {
-        color: #8DB4D6;
-        font-size: 34px;
-        font-weight: 800;
-        margin-top: 8px;
-    }
-
-    .metric-note {
-        color: #8DB4D6;
-        font-size: 13px;
-        margin-top: 8px;
-    }
-
-    .trend-card {
-        background-color: #FFFFFF;
-        border: 1px solid #D6E6F2;
-        border-radius: 16px;
-        padding: 20px;
-    }
-
-    div[data-testid="stDataFrame"] {
-        border: 1px solid #D6E6F2;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-
-    .stTextInput input {
-        background-color: #FFFFFF;
-        border: 1px solid #8DB4D6;
-        color: #8DB4D6;
-        border-radius: 10px;
-    }
-
-    .stSelectbox div[data-baseweb="select"] > div {
-        background-color: #FFFFFF;
-        border-color: #8DB4D6;
-        color: #8DB4D6;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-
-@st.cache_data(ttl=300)
-def load_data():
-    df = pd.read_csv(DATA_URL)
-
-    df["published_date"] = pd.to_datetime(df["published_date"], errors="coerce")
-    df["collected_at"] = pd.to_datetime(df["collected_at"], errors="coerce")
-    df["tone"] = pd.to_numeric(df["tone"], errors="coerce")
-
-    return df
-
-
-def get_sentiment(tone):
-    if pd.isna(tone):
-        return "Neutral"
-    elif tone > 1:
-        return "Positive"
-    elif tone < -1:
-        return "Negative"
-    return "Neutral"
-
-
-def extract_topic(title):
-    if pd.isna(title):
-        return "Other"
-
-    title = title.lower()
-
-    topic_words = {
-        "Artificial Intelligence": ["ai", "artificial intelligence", "chatgpt", "openai", "robot"],
-        "Technology": ["technology", "tech", "software", "cyber", "digital"],
-        "Business & Economy": ["business", "market", "economy", "stock", "finance"],
-        "Health": ["health", "hospital", "medical", "disease", "doctor"],
-        "Sports": ["sport", "cricket", "football", "match", "player"],
-        "Entertainment": ["movie", "film", "music", "celebrity", "actor"]
-    }
-
-    for topic, words in topic_words.items():
-        if any(re.search(r"\b" + re.escape(word) + r"\b", title) for word in words):
-            return topic
-
-    return "General News"
-
-
-df = load_data()
-df["sentiment"] = df["tone"].apply(get_sentiment)
-df["topic"] = df["title"].apply(extract_topic)
-
-st.markdown('<div class="main-title">TrendWatch</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="subtitle">Live News Trend and Sentiment Analytics Dashboard</div>',
-    unsafe_allow_html=True
+    st.markdown(f"""
+    <div class="update-box">
+    <b>Last Updated</b><br>
+    {datetime.now().strftime("%d %B %Y")}<br>
+    {datetime.now().strftime("%I:%M %p")}
+    </div>
+    """, unsafe_allow_html=True)
+    search = st.text_input(
+    "",
+    placeholder="🔍 Search news, topics or keywords..."
 )
+    with st.sidebar:
 
-search = st.text_input("🔎 Search news headlines")
+    st.title("📊 Dashboard")
 
-country_options = ["All Countries"] + sorted(df["source_country"].dropna().unique().tolist())
-selected_country = st.selectbox("Filter by country", country_options)
-
-filtered_df = df.copy()
-
-if search:
-    filtered_df = filtered_df[
-        filtered_df["title"].str.contains(search, case=False, na=False)
-    ]
-
-if selected_country != "All Countries":
-    filtered_df = filtered_df[
-        filtered_df["source_country"] == selected_country
-    ]
-
-total_articles = len(filtered_df)
-top_topic = (
-    filtered_df["topic"].value_counts().index[0]
-    if not filtered_df.empty else "No data"
-)
-avg_tone = filtered_df["tone"].mean()
-
-if pd.isna(avg_tone):
-    overall_sentiment = "Neutral"
-elif avg_tone > 1:
-    overall_sentiment = "Positive"
-elif avg_tone < -1:
-    overall_sentiment = "Negative"
-else:
-    overall_sentiment = "Neutral"
-
-news_sources = filtered_df["domain"].nunique()
-
-c1, c2, c3, c4 = st.columns(4)
-
-with c1:
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Articles Analysed</div>
-        <div class="metric-value">{total_articles}</div>
-        <div class="metric-note">Live articles in your dataset</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c2:
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Top Trending Topic</div>
-        <div class="metric-value">{top_topic}</div>
-        <div class="metric-note">Most mentioned category</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c3:
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Overall Sentiment</div>
-        <div class="metric-value">{overall_sentiment}</div>
-        <div class="metric-note">Average tone: {avg_tone:.2f}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c4:
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">News Sources</div>
-        <div class="metric-value">{news_sources}</div>
-        <div class="metric-note">Different news domains</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown('<div class="section-title">News Trend Overview</div>', unsafe_allow_html=True)
-
-left, right = st.columns([2, 1])
-
-with left:
-    st.markdown('<div class="trend-card">', unsafe_allow_html=True)
-    st.subheader("Articles Collected Over Time")
-
-    trend_df = (
-        filtered_df.dropna(subset=["published_date"])
-        .groupby(filtered_df["published_date"].dt.date)
-        .size()
+    menu = st.radio(
+        "",
+        [
+            "Dashboard",
+            "Trending Topics",
+            "News Search",
+            "Sentiment Analysis",
+            "Categories",
+            "Reports"
+        ]
     )
 
-    st.line_chart(trend_df, color="#8DB4D6")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("---")
 
-with right:
-    st.markdown('<div class="trend-card">', unsafe_allow_html=True)
-    st.subheader("Trending Topics")
+    st.info("""
+### Data Source
 
-    topic_counts = filtered_df["topic"].value_counts().head(6)
+**GDELT**
 
-    if not topic_counts.empty:
-        st.bar_chart(topic_counts, color="#8DB4D6")
+Global Database of Events,
+Language & Tone
+""")
+    @st.cache_data
+def load_data():
+
+    if os.path.exists("data/news.csv"):
+        return pd.read_csv("data/news.csv")
+
+    return pd.DataFrame()
+
+news = load_data()
+if search:
+
+    news = news[
+        news.astype(str)
+        .apply(lambda row: row.str.contains(search, case=False).any(), axis=1)
+    ]
+    if len(news)==0:
+
+    st.warning("No news found.")
+
+    st.stop()
+    # ---------------- DATA PREPARATION ----------------
+
+if "headline" in news.columns:
+    news["headline"] = news["headline"].fillna("")
+
+if "date" in news.columns:
+    news["date"] = pd.to_datetime(news["date"], errors="coerce")
+
+# Count today's mentions
+today_mentions = len(news)
+
+# Trending topic
+top_topic = "AI"
+
+if "topic" in news.columns and len(news) > 0:
+    top_topic = news["topic"].mode()[0]
+
+# Sentiment
+if "sentiment" not in news.columns:
+
+    def sentiment(text):
+        score = TextBlob(str(text)).sentiment.polarity
+
+        if score > 0.1:
+            return "Positive"
+        elif score < -0.1:
+            return "Negative"
+        else:
+            return "Neutral"
+
+    news["sentiment"] = news["headline"].apply(sentiment)
+
+positive = (news["sentiment"] == "Positive").sum()
+neutral = (news["sentiment"] == "Neutral").sum()
+negative = (news["sentiment"] == "Negative").sum()
+left, middle, right = st.columns([1.2,1.4,1.2])
+with left:
+    st.markdown(f"""
+<div class="card">
+
+<h5>TODAY'S TOP TRENDING TOPIC</h5>
+
+<h1 style="color:#2D72D9;">
+🤖 {top_topic}
+</h1>
+
+<p style="font-size:18px;">
+Artificial Intelligence is dominating global discussions.
+</p>
+
+<hr>
+
+<h5>MENTIONS TODAY</h5>
+
+<h2 style="color:#2D72D9;">
+{today_mentions:,}
+</h2>
+
+<h4 style="color:#28C76F;">
+⬈ 78%
+</h4>
+
+</div>
+""", unsafe_allow_html=True)
+    with middle:
+        st.markdown("### MENTIONS OVER TIME")
+
+if "date" in news.columns:
+
+    trend = (
+        news.groupby(news["date"].dt.date)
+        .size()
+        .reset_index(name="mentions")
+    )
+
+    fig = px.line(
+        trend,
+        x="date",
+        y="mentions",
+        markers=True
+    )
+
+    fig.update_traces(
+        line_color="#2D72D9",
+        line_width=4
+    )
+
+    fig.update_layout(
+
+        plot_bgcolor="white",
+
+        paper_bgcolor="white",
+
+        margin=dict(l=10,r=10,t=20,b=10),
+
+        height=330
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+    with right:
+        st.markdown("### SENTIMENT OVERVIEW")
+
+fig = go.Figure(
+    data=[
+        go.Pie(
+            labels=["Positive","Neutral","Negative"],
+            values=[positive,neutral,negative],
+            hole=.70
+        )
+    ]
+)
+
+fig.update_traces(
+
+    marker=dict(
+        colors=[
+            "#2D72D9",
+            "#BFD7FF",
+            "#DCEBFA"
+        ]
+    )
+)
+
+fig.update_layout(
+
+    showlegend=False,
+
+    height=330,
+
+    margin=dict(
+        l=10,
+        r=10,
+        t=20,
+        b=10
+    )
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
+
+st.metric("Positive",f"{positive}")
+
+st.metric("Neutral",f"{neutral}")
+
+st.metric("Negative",f"{negative}")
+# ---------------- TRENDING CATEGORIES ----------------
+
+st.markdown("## 🔥 Trending Categories")
+
+category_icons = {
+    "AI & Technology":"🤖",
+    "Politics":"🏛️",
+    "Business":"📈",
+    "Health":"💙",
+    "Sports":"⚽",
+    "Entertainment":"🎬"
+}
+
+if "category" in news.columns:
+
+    categories = (
+        news["category"]
+        .value_counts()
+        .head(6)
+    )
+
+else:
+
+    categories = pd.Series(
+        [24596,18362,14827,12103,9845,8194],
+        index=[
+            "AI & Technology",
+            "Politics",
+            "Business",
+            "Health",
+            "Sports",
+            "Entertainment"
+        ]
+    )
+
+cols = st.columns(6)
+
+for col, (cat, count) in zip(cols, categories.items()):
+
+    icon = category_icons.get(cat, "📰")
+
+    with col:
+
+        st.markdown(f"""
+        <div class="category-card">
+
+        <h1>{icon}</h1>
+
+        <h4>{cat}</h4>
+
+        <h3>{count:,}</h3>
+
+        <p style="color:#28C76F;">
+        ▲ Trending
+        </p>
+
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("---")
+
+st.markdown("## 📰 Latest News Headlines")
+display_news = news.head(8)
+
+for _, row in display_news.iterrows():
+
+    headline = row.get("headline","No Headline")
+    source = row.get("source","Unknown")
+    sentiment = row.get("sentiment","Neutral")
+    url = row.get("url","#")
+
+    if sentiment=="Positive":
+        color="#28C76F"
+
+    elif sentiment=="Negative":
+        color="#EA5455"
+
     else:
-        st.info("No topic data available.")
+        color="#FFB547"
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    left,right = st.columns([6,1])
 
-st.markdown('<div class="section-title">Sentiment Analysis</div>', unsafe_allow_html=True)
+    with left:
 
-sentiment_counts = (
-    filtered_df["sentiment"]
-    .value_counts()
-    .reindex(["Positive", "Neutral", "Negative"], fill_value=0)
-)
+        st.markdown(f"""
+        <div class="news-card">
 
-s1, s2 = st.columns(2)
+        <h4>{headline}</h4>
 
-with s1:
-    st.markdown('<div class="trend-card">', unsafe_allow_html=True)
-    st.subheader("Sentiment Distribution")
-    st.bar_chart(sentiment_counts, color="#8DB4D6")
-    st.markdown('</div>', unsafe_allow_html=True)
+        <p>{source}</p>
 
-with s2:
-    st.markdown('<div class="trend-card">', unsafe_allow_html=True)
-    st.subheader("Top News Countries")
-    country_counts = filtered_df["source_country"].value_counts().head(8)
-    st.bar_chart(country_counts, color="#8DB4D6")
-    st.markdown('</div>', unsafe_allow_html=True)
+        <span style="
+        background:{color};
+        color:white;
+        padding:6px 12px;
+        border-radius:20px;
+        ">
+        {sentiment}
+        </span>
 
-st.markdown('<div class="section-title">Latest News Headlines</div>', unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
-latest_news = filtered_df.sort_values(
-    "collected_at",
-    ascending=False
-)[
-    ["title", "topic", "sentiment", "source_country",
-     "published_date", "tone", "url"]
-]
+    with right:
 
-st.dataframe(
-    latest_news,
-    use_container_width=True,
-    hide_index=True
-)
+        st.link_button(
+            "Read More",
+            url
+        )
+        st.markdown("<br>",unsafe_allow_html=True)
 
-st.download_button(
-    "Download Filtered News Dataset",
-    data=filtered_df.to_csv(index=False).encode("utf-8"),
-    file_name="trendwatch_filtered_news.csv",
-    mime="text/csv"
-)
+if st.button("View All Headlines"):
+
+    st.dataframe(news,use_container_width=True)
+    st.markdown("---")
+
+st.markdown("""
+<center>
+
+© 2026 TrendWatch
+
+Live News Trend & Sentiment Analytics
+
+Powered by GDELT
+
+</center>
+""",unsafe_allow_html=True)
