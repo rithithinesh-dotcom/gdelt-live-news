@@ -81,14 +81,11 @@ Global Database of Events,
 Language & Tone
 """)
     @st.cache_data
-def load_data():
-
-    if os.path.exists("data/news.csv"):
-        return pd.read_csv("data/news.csv")
-
-    return pd.DataFrame()
-
-news = load_data()
+    def load_data():
+        if os.path.exists("data/news.csv"):
+            return pd.read_csv("data/news.csv")
+            return pd.DataFrame()
+            news = load_data()
 if search:
 
     news = news[
