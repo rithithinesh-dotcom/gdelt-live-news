@@ -1,7 +1,7 @@
 <style>
 .tw2{--bg:#F5F9FF;--sidebar-top:#D9E9FF;--sidebar-bottom:#BFD8FF;--primary:#2563EB;--secondary:#60A5FA;
 --card:#FFFFFF;--text:#1E3A8A;--muted:#5D7DB8;--lightgray:#EEF5FF;--success:#22C55E;--warning:#F59E0B;--danger:#EF4444;
---radius:20px;--radius-sm:14px;--shadow:0 10px 30px rgba(37,99,235,.08);--shadow-lift:0 18px 40px rgba(37,99,235,.16);
+--radius:20px;--radius-sm:14px;--shadow:0 10px 30px rgba(37,99,235,08);--shadow-lift:0 18px 40px rgba(37,99,235,16);
 font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);
 display:flex;min-height:700px;border-radius:16px;overflow:hidden;box-sizing:border-box}
 .tw2 *{box-sizing:border-box}
