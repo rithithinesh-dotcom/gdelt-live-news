@@ -1,6 +1,11 @@
-streamlit
+Flask==3.0.3
+requests
 pandas
+numpy
 plotly
 textblob
-requests
-numpy
+gunicorn
+openpyxl
+reportlab
+beautifulsoup4
+lxml
