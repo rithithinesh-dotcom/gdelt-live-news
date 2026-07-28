@@ -1,0 +1,11 @@
+templates/
+
+dashboard.html
+
+search.html
+
+reports.html
+
+sentiment.html
+
+base.html
